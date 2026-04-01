@@ -18,6 +18,24 @@ A terminal pet companion extracted from a hidden April Fools' easter egg buried 
 
 ---
 
+> **⚠️ Disclaimer / 免责声明**
+>
+> This project has **no affiliation with any cryptocurrency, meme coin, or token** — including $PUDDING or any other token on Pump.fun or similar platforms.
+>
+> I did not create, launch, endorse, or benefit from any token associated with this project. Any claims that creator fees, rewards, or proceeds are being redirected to this repository or its author are **false and made without my knowledge or consent**. I am not responsible for any financial activity carried out under this project's name.
+>
+> If you are considering purchasing any such token, please be aware: **it has no connection to this project, and I receive nothing from it.**
+>
+> ---
+>
+> 本项目与任何加密货币、Meme 币或代币**没有任何关联**，包括 Pump.fun 或其他平台上的 $PUDDING 及同类代币。
+>
+> 我没有创建、发行、背书任何相关代币，也未从中获益。任何声称"创作者收益已重定向至本仓库或作者"的说法均属**虚假信息，系他人在未经我知情或同意的情况下发起的行为**，我对以本项目名义开展的任何金融活动不承担任何责任。
+>
+> 如果你正在考虑购买此类代币，请注意：**它与本项目毫无关系，我从中分文未得。**
+
+---
+
 ## The Story
 
 Someone reverse-engineered Claude Code (Anthropic's official CLI tool) and found this pet system hidden in `src/buddy/` — fully implemented, never shipped.
