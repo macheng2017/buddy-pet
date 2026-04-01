@@ -1,12 +1,102 @@
 #!/usr/bin/env bun
 /**
- * 愚人节宠物系统独立演示
- * 从 src/buddy/ 提取核心逻辑，无需其他项目依赖
- * 运行: bun buddy-demo.tsx
+ * Buddy Pet — April Fools' easter egg extracted from Claude Code
+ * Run: npm start / bun index.tsx
+ * Lang: auto-detected from system locale, override with --lang=zh or --lang=en
  */
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { render, Box, Text, useInput } from 'ink'
+
+// ─── i18n ──────────────────────────────────────────────────────────────────
+
+type Lang = 'en' | 'zh'
+
+function detectLang(): Lang {
+  const arg = process.argv.find(a => a.startsWith('--lang='))
+  if (arg) return arg.includes('zh') ? 'zh' : 'en'
+  const locale = process.env.LANG ?? process.env.LC_ALL ?? process.env.LC_MESSAGES ?? ''
+  return locale.toLowerCase().includes('zh') ? 'zh' : 'en'
+}
+
+const T = {
+  en: {
+    title: '🐾 Buddy Pet',
+    rarity: 'Rarity  ',
+    eye: 'Eye     ',
+    hat: 'Hat     ',
+    bio: 'Bio     ',
+    stats: '── Stats ──',
+    pet: 'pet',
+    reroll: 'reroll',
+    next: 'next',
+    statsToggle: 'stats',
+    quit: 'quit',
+    newFriend: 'New friend!',
+    langSwitch: 'zh',
+    quips: [
+      "Don't look at me, I'm thinking",
+      "Today's bug is your fault",
+      "Just vibing",
+      "Need help? (No)",
+      "On read",
+      "Charging...",
+      "❤ ❤ ❤",
+      "I work harder than you think",
+      "Hello, stranger",
+    ],
+    personalities: [
+      'Debugs at 3am, obsessed with semicolons',
+      'Blames everything on the cache',
+      'Believes comments matter more than code',
+      'Every commit message says "fix bug"',
+      'Has religious devotion to dark mode',
+      'Treats the README as life philosophy',
+      'Believes recursion solves everything',
+      'Has strange feelings about unused variables',
+      'Always leaves TODOs for the next person',
+      'Uses console.log as the ultimate debugger',
+    ],
+  },
+  zh: {
+    title: '🐾 愚人节宠物',
+    rarity: '稀有度  ',
+    eye: '眼睛    ',
+    hat: '帽子    ',
+    bio: '性格    ',
+    stats: '── 属性 ──',
+    pet: '摸一摸',
+    reroll: '重新抽',
+    next: '下一种',
+    statsToggle: '属性',
+    quit: '退出',
+    newFriend: '新朋友！',
+    langSwitch: 'en',
+    quips: [
+      '别看我，我在思考',
+      '今天的 bug 是你的错',
+      '我只是在摸鱼',
+      '需要帮忙吗？（不需要）',
+      '已读不回',
+      '正在充电中...',
+      '❤ ❤ ❤',
+      '我比你想象的更努力',
+      '你好，陌生人',
+    ],
+    personalities: [
+      '喜欢在深夜调试代码，对分号有执念',
+      '把所有问题都归咎于缓存',
+      '坚信注释比代码重要',
+      '每次提交都写"fix bug"',
+      '对黑暗模式有着宗教般的热情',
+      '把 README 当成人生哲学',
+      '相信递归能解决一切',
+      '对未使用变量有奇怪的感情',
+      '总是把 TODO 留给下一个人',
+      '把 console.log 当作调试的终极武器',
+    ],
+  },
+}
 
 // ─── 类型定义 ──────────────────────────────────────────────────────────────
 
@@ -46,12 +136,8 @@ const RARITY_COLORS: Record<Rarity, string> = {
 }
 
 type CompanionBones = {
-  rarity: Rarity
-  species: Species
-  eye: Eye
-  hat: Hat
-  shiny: boolean
-  stats: Record<StatName, number>
+  rarity: Rarity; species: Species; eye: Eye; hat: Hat
+  shiny: boolean; stats: Record<StatName, number>
 }
 
 type Companion = CompanionBones & { name: string; personality: string }
@@ -159,7 +245,7 @@ const HAT_LINES: Record<Hat, string> = {
 
 function renderSprite(bones: CompanionBones, frame = 0): string[] {
   const frames = BODIES[bones.species]
-  const body = frames[frame % frames.length]!.map(line => line.replaceAll('{E}', bones.eye))
+  const body = frames[frame % frames.length]!.map(l => l.replaceAll('{E}', bones.eye))
   const lines = [...body]
   if (bones.hat !== 'none' && !lines[0]!.trim()) lines[0] = HAT_LINES[bones.hat]
   if (!lines[0]!.trim() && frames.every(f => !f[0]!.trim())) lines.shift()
@@ -193,7 +279,7 @@ function renderFace(bones: CompanionBones): string {
 
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0
-  return function () {
+  return () => {
     a |= 0; a = (a + 0x6d2b79f5) | 0
     let t = Math.imul(a ^ (a >>> 15), 1 | a)
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
@@ -214,7 +300,7 @@ function pick<T>(rng: () => number, arr: readonly T[]): T {
 function rollRarity(rng: () => number): Rarity {
   const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0)
   let roll = rng() * total
-  for (const rarity of RARITIES) { roll -= RARITY_WEIGHTS[rarity]; if (roll < 0) return rarity }
+  for (const r of RARITIES) { roll -= RARITY_WEIGHTS[r]; if (roll < 0) return r }
   return 'common'
 }
 
@@ -240,14 +326,7 @@ const PET_NAMES = [
   'Fizz', 'Pudding', 'Ramen', 'Zigzag', 'Pebble', 'Squid',
 ]
 
-const PERSONALITIES = [
-  '喜欢在深夜调试代码，对分号有执念', '把所有问题都归咎于缓存', '坚信注释比代码重要',
-  '每次提交都写"fix bug"', '对黑暗模式有着宗教般的热情', '把 README 当成人生哲学',
-  '相信递归能解决一切', '对未使用变量有奇怪的感情', '总是把 TODO 留给下一个人',
-  '把 console.log 当作调试的终极武器',
-]
-
-function generateCompanion(seed: string): Companion {
+function generateCompanion(seed: string, lang: Lang): Companion {
   const rng = mulberry32(hashString(seed + 'friend-2026-401'))
   const rarity = rollRarity(rng)
   return {
@@ -258,7 +337,7 @@ function generateCompanion(seed: string): Companion {
     shiny: rng() < 0.01,
     stats: rollStats(rng, rarity),
     name: pick(rng, PET_NAMES),
-    personality: pick(rng, PERSONALITIES),
+    personality: pick(rng, T[lang].personalities),
   }
 }
 
@@ -270,7 +349,7 @@ const PET_HEARTS = [
   '   ♥    ♥   ', '  ♥  ♥   ♥  ', ' ♥   ♥  ♥   ', '♥  ♥      ♥ ', '·    ·   ·  ',
 ]
 
-// ─── 主界面 ────────────────────────────────────────────────────────────────
+// ─── 属性条 ────────────────────────────────────────────────────────────────
 
 function StatBar({ value, color }: { value: number; color: string }) {
   const filled = Math.round(value / 10)
@@ -283,54 +362,60 @@ function StatBar({ value, color }: { value: number; color: string }) {
   )
 }
 
+// ─── 主界面 ────────────────────────────────────────────────────────────────
+
 function App() {
+  const [lang, setLang] = useState<Lang>(detectLang)
+  const t = T[lang]
+
   const [seed, setSeed] = useState(() => String(Date.now()))
-  const [companion, setCompanion] = useState(() => generateCompanion(String(Date.now())))
+  const [companion, setCompanion] = useState(() => generateCompanion(String(Date.now()), detectLang()))
   const [tick, setTick] = useState(0)
   const [petTick, setPetTick] = useState<number | null>(null)
   const [bubble, setBubble] = useState<string | null>(null)
   const [bubbleTick, setBubbleTick] = useState(0)
   const [showStats, setShowStats] = useState(false)
-  const [speciesIndex, setSpeciesIndex] = useState(-1) // -1 = random
-
-  const QUIPS = [
-    `喵~ 别看我，我在思考`, `${renderFace(companion)} ...`, `今天的 bug 是你的错`,
-    `我只是在摸鱼`, `需要帮忙吗？（不需要）`, `已读不回`, `正在充电中...`,
-    `❤ ❤ ❤`, `我比你想象的更努力`, `你好，陌生人`,
-  ]
+  const [speciesIndex, setSpeciesIndex] = useState(-1)
 
   useEffect(() => {
-    const t = setInterval(() => setTick(n => n + 1), TICK_MS)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setTick(n => n + 1), TICK_MS)
+    return () => clearInterval(timer)
   }, [])
 
   const reroll = useCallback(() => {
     const newSeed = String(Date.now())
     setSeed(newSeed)
-    setCompanion(generateCompanion(newSeed))
+    setCompanion(generateCompanion(newSeed, lang))
     setSpeciesIndex(-1)
-    setBubble('新朋友！')
+    setBubble(t.newFriend)
     setBubbleTick(tick)
-  }, [tick])
+  }, [tick, lang, t])
 
   const pet = useCallback(() => {
+    const quips = [...t.quips, `${renderFace(companion)} ...`]
     setPetTick(tick)
-    setBubble(QUIPS[Math.floor(Math.random() * QUIPS.length)]!)
+    setBubble(quips[Math.floor(Math.random() * quips.length)]!)
     setBubbleTick(tick)
-  }, [tick, companion])
+  }, [tick, companion, t])
 
   const nextSpecies = useCallback(() => {
     const next = (speciesIndex + 1) % ALL_SPECIES.length
     setSpeciesIndex(next)
-    const newSeed = seed + ALL_SPECIES[next]
-    setCompanion({ ...generateCompanion(newSeed), species: ALL_SPECIES[next]! })
-  }, [speciesIndex, seed])
+    setCompanion({ ...generateCompanion(seed + ALL_SPECIES[next], lang), species: ALL_SPECIES[next]! })
+  }, [speciesIndex, seed, lang])
+
+  const switchLang = useCallback(() => {
+    const next: Lang = lang === 'en' ? 'zh' : 'en'
+    setLang(next)
+    setCompanion(c => ({ ...c, personality: pick(() => Math.random(), T[next].personalities) }))
+  }, [lang])
 
   useInput((input, key) => {
     if (input === 'p') pet()
     if (input === 'r') reroll()
     if (input === 'n') nextSpecies()
     if (input === 's') setShowStats(v => !v)
+    if (input === 'l') switchLang()
     if (key.escape || input === 'q') process.exit(0)
   })
 
@@ -355,81 +440,49 @@ function App() {
   const heartFrame = petting ? PET_HEARTS[Math.min(petAge, PET_HEARTS.length - 1)] : null
   const sprite = heartFrame ? [heartFrame, ...body] : body
 
-  // 气泡消失逻辑
   const bubbleAge = bubble ? tick - bubbleTick : 0
   const BUBBLE_SHOW = 12
   const fading = bubbleAge >= BUBBLE_SHOW - 4
-  if (bubble && bubbleAge >= BUBBLE_SHOW) {
-    setTimeout(() => setBubble(null), 0)
-  }
+  if (bubble && bubbleAge >= BUBBLE_SHOW) setTimeout(() => setBubble(null), 0)
 
   const color = RARITY_COLORS[companion.rarity]
-  const shinyPrefix = companion.shiny ? '✨ ' : ''
 
   return (
     <Box flexDirection="column" padding={1}>
-      {/* 标题 */}
       <Box marginBottom={1}>
-        <Text bold color="yellow">🐾 愚人节宠物系统  </Text>
+        <Text bold color="yellow">{t.title}  </Text>
         <Text dimColor>SALT: friend-2026-401</Text>
       </Box>
 
-      <Box flexDirection="row" gap={4}>
-        {/* 左：精灵 + 名字 */}
+      <Box flexDirection="row">
+        {/* 精灵 */}
         <Box flexDirection="column" alignItems="center" width={20}>
           {sprite.map((line, i) => (
-            <Text key={`sprite-${i}`} color={i === 0 && heartFrame ? 'red' : color}>
-              {line}
-            </Text>
+            <Text key={`sprite-${i}`} color={i === 0 && heartFrame ? 'red' : color}>{line}</Text>
           ))}
-          <Text bold color={color}>{shinyPrefix}{companion.name}</Text>
+          <Text bold color={color}>{companion.shiny ? '✨ ' : ''}{companion.name}</Text>
           <Text color={color}>{RARITY_STARS[companion.rarity]}</Text>
           <Text dimColor italic>{companion.species}</Text>
         </Box>
 
-        {/* 中：气泡 + 信息 */}
-        <Box flexDirection="column" width={36}>
+        {/* 信息 */}
+        <Box flexDirection="column" width={36} marginLeft={2}>
           {bubble ? (
-            <Box
-              borderStyle="round"
-              borderColor={fading ? 'gray' : color}
-              paddingX={1}
-              marginBottom={1}
-              width={32}
-            >
-              <Text italic dimColor={fading} color={fading ? 'gray' : undefined}>
-                {bubble}
-              </Text>
+            <Box borderStyle="round" borderColor={fading ? 'gray' : color} paddingX={1} marginBottom={1} width={32}>
+              <Text italic dimColor={fading} color={fading ? 'gray' : undefined}>{bubble}</Text>
             </Box>
           ) : (
             <Box marginBottom={1} height={3} />
           )}
 
-          <Box flexDirection="column" gap={0}>
-            <Text>
-              <Text dimColor>稀有度  </Text>
-              <Text bold color={color}>{companion.rarity.toUpperCase()}</Text>
-              {companion.shiny && <Text color="yellow">  ✨ SHINY</Text>}
-            </Text>
-            <Text>
-              <Text dimColor>眼睛    </Text>
-              <Text>{companion.eye}</Text>
-            </Text>
-            {companion.hat !== 'none' && (
-              <Text>
-                <Text dimColor>帽子    </Text>
-                <Text>{companion.hat}</Text>
-              </Text>
-            )}
-            <Text>
-              <Text dimColor>性格    </Text>
-              <Text italic>{companion.personality}</Text>
-            </Text>
-          </Box>
+          <Text><Text dimColor>{t.rarity}</Text><Text bold color={color}>{companion.rarity.toUpperCase()}</Text>{companion.shiny && <Text color="yellow">  ✨ SHINY</Text>}</Text>
+          <Text><Text dimColor>{t.eye}</Text><Text>{companion.eye}</Text></Text>
+          {companion.hat !== 'none' && <Text><Text dimColor>{t.hat}</Text><Text>{companion.hat}</Text></Text>}
+          <Text><Text dimColor>{t.bio}</Text><Text italic>{companion.personality}</Text></Text>
 
           {showStats && (
             <Box flexDirection="column" marginTop={1}>
-              <Text bold dimColor>── 属性 ──</Text>
+              <Text bold dimColor>{t.stats}</Text>
               {STAT_NAMES.map(name => (
                 <Box key={`stat-${name}`}>
                   <Text color="gray">{name.padEnd(10)}</Text>
@@ -441,14 +494,14 @@ function App() {
         </Box>
       </Box>
 
-      {/* 底部操作提示 */}
       <Box marginTop={1}>
         <Text dimColor>
-          [<Text color="cyan">p</Text>] 摸一摸
-          [<Text color="cyan">r</Text>] 重新抽
-          [<Text color="cyan">n</Text>] 下一种({speciesIndex === -1 ? 'rand' : ALL_SPECIES[speciesIndex]})
-          [<Text color="cyan">s</Text>] 属性
-          [<Text color="cyan">q</Text>] 退出
+          [<Text color="cyan">p</Text>] {t.pet}
+          {'  '}[<Text color="cyan">r</Text>] {t.reroll}
+          {'  '}[<Text color="cyan">n</Text>] {t.next}({speciesIndex === -1 ? 'rand' : ALL_SPECIES[speciesIndex]})
+          {'  '}[<Text color="cyan">s</Text>] {t.statsToggle}
+          {'  '}[<Text color="cyan">l</Text>] {t.langSwitch}
+          {'  '}[<Text color="cyan">q</Text>] {t.quit}
         </Text>
       </Box>
     </Box>
