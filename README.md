@@ -1,8 +1,8 @@
 # 🐾 Buddy Pet
 
-一个运行在终端里的宠物养成小游戏，从 Claude Code 源码中的愚人节彩蛋提取而来。
+A terminal pet companion extracted from a hidden April Fools' easter egg buried deep in Claude Code's source code — unlocked by reverse-engineering, not by Anthropic.
 
-每次启动随机抽一只小动物陪你写代码，有 18 种物种、5 级稀有度、1% 概率出 ✨ SHINY。
+一个从 Claude Code 反编译源码中挖出的愚人节彩蛋，在终端里养一只陪你写代码的小动物。
 
 ```
         /^\
@@ -10,73 +10,104 @@
       ( @  @ )
      =(  ..  )=
       (")__(")
-        Zigzag        稀有度  RARE
-         ★★★          眼睛    @
-        rabbit        帽子    wizard
-                      性格    相信递归能解决一切
+        Zigzag        Rarity  RARE
+         ★★★          Eye     @
+        rabbit        Hat     wizard
+                      Bio     Believes recursion solves everything
 ```
 
-## 安装
+---
 
-需要 Node.js 或 Bun 运行环境。
+## The Story
+
+Someone reverse-engineered Claude Code (Anthropic's official CLI tool) and found this pet system hidden in `src/buddy/` — fully implemented, never shipped.
+
+The code has a date check:
+
+```typescript
+export function isBuddyTeaserWindow(): boolean {
+  const d = new Date()
+  return d.getFullYear() === 2026 && d.getMonth() === 3 && d.getDate() <= 7
+}
+```
+
+Today is April 1, 2026. That function returns `true` for the first time.
+
+But there's another lock:
+
+```typescript
+if (!feature('BUDDY')) return  // always false in external builds
+```
+
+`feature()` is hardcoded to return `false` in all public releases. The date logic never runs. The salt `friend-2026-401` tells you exactly when this was meant to go live — but only for Anthropic employees.
+
+This project extracts that hidden system and lets anyone run it.
+
+---
+
+## Install
+
+Requires Node.js or Bun.
 
 ```bash
-# 克隆项目
 git clone https://github.com/macheng2017/buddy-pet
 cd buddy-pet
 
-# 安装依赖
 npm install
-# 或
+# or
 bun install
 ```
 
-## 运行
+## Run
 
 ```bash
-# 使用 npm
 npm start
-
-# 使用 bun
+# or
 bun index.tsx
 ```
 
-## 操作
+## Controls
 
-| 按键 | 动作 |
-|------|------|
-| `p` | 摸一摸，冒爱心，宠物会说话 |
-| `r` | 重新抽一只 |
-| `n` | 按顺序翻看全部 18 种动物 |
-| `s` | 显示/隐藏五维属性 |
-| `q` | 退出 |
+| Key | Action |
+|-----|--------|
+| `p` | Pet it — hearts float up, it says something |
+| `r` | Reroll a new companion |
+| `n` | Cycle through all 18 species |
+| `s` | Toggle stats panel |
+| `q` | Quit |
 
-## 宠物属性
+## Stats
 
-每只宠物有五维属性，由 userId 哈希确定性生成：
+Each companion has 5 stats deterministically generated from a hash of the current timestamp:
 
-- **DEBUGGING** 调试力
-- **PATIENCE** 耐心
-- **CHAOS** 混乱值
-- **WISDOM** 智慧
-- **SNARK** 毒舌度
+- **DEBUGGING** — how good it is at finding bugs
+- **PATIENCE** — self-explanatory
+- **CHAOS** — unpredictability index
+- **WISDOM** — ancient knowledge
+- **SNARK** — attitude level
 
-## 稀有度
+## Rarity
 
-| 稀有度 | 概率 |
-|--------|------|
+| Rarity | Chance |
+|--------|--------|
 | ★ Common | 60% |
 | ★★ Uncommon | 25% |
 | ★★★ Rare | 10% |
 | ★★★★ Epic | 4% |
 | ★★★★★ Legendary | 1% |
 
-SHINY 概率：1%
+✨ SHINY chance: 1%
 
-## 18 种动物
+## Species (18 total)
 
 duck · goose · blob · cat · dragon · octopus · owl · penguin · turtle · snail · ghost · axolotl · capybara · cactus · robot · rabbit · mushroom · chonk
 
+---
+
 ## 背景
 
-这个宠物系统原本藏在 Claude Code（Anthropic 官方 CLI 工具）的源码里，被 `feature('BUDDY')` 开关锁住，永远不会出现在用户面前。盐值 `friend-2026-401` 暗示它是为 2026 年 4 月 1 日愚人节准备的彩蛋。
+这个宠物系统完整地藏在 Claude Code（Anthropic 官方 CLI 工具）的反编译源码里，被 `feature('BUDDY')` 开关锁住，从未出现在任何用户面前。
+
+盐值 `friend-2026-401` 暗示它是为 2026 年 4 月 1 日准备的愚人节彩蛋。代码里写了完整的日期解锁逻辑，但入口处的 `feature()` 永远返回 `false`，日期判断根本执行不到。
+
+这个彩蛋只为 Anthropic 内部员工解锁。我们把它挖出来了。
