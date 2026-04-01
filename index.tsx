@@ -12,12 +12,6 @@ import { render, Box, Text, useInput } from 'ink'
 
 type Lang = 'en' | 'zh'
 
-function detectLang(): Lang {
-  const arg = process.argv.find(a => a.startsWith('--lang='))
-  if (arg) return arg.includes('zh') ? 'zh' : 'en'
-  const locale = process.env.LANG ?? process.env.LC_ALL ?? process.env.LC_MESSAGES ?? ''
-  return locale.toLowerCase().includes('zh') ? 'zh' : 'en'
-}
 
 const T = {
   en: {
@@ -365,11 +359,11 @@ function StatBar({ value, color }: { value: number; color: string }) {
 // ─── 主界面 ────────────────────────────────────────────────────────────────
 
 function App() {
-  const [lang, setLang] = useState<Lang>(detectLang)
+  const [lang, setLang] = useState<Lang>('en')
   const t = T[lang]
 
   const [seed, setSeed] = useState(() => String(Date.now()))
-  const [companion, setCompanion] = useState(() => generateCompanion(String(Date.now()), detectLang()))
+  const [companion, setCompanion] = useState(() => generateCompanion(String(Date.now()), 'en'))
   const [tick, setTick] = useState(0)
   const [petTick, setPetTick] = useState<number | null>(null)
   const [bubble, setBubble] = useState<string | null>(null)
@@ -416,6 +410,8 @@ function App() {
     if (input === 'n') nextSpecies()
     if (input === 's') setShowStats(v => !v)
     if (input === 'l') switchLang()
+    if (input === '1') { setLang('en'); setCompanion(c => ({ ...c, personality: pick(() => Math.random(), T.en.personalities) })) }
+    if (input === '2') { setLang('zh'); setCompanion(c => ({ ...c, personality: pick(() => Math.random(), T.zh.personalities) })) }
     if (key.escape || input === 'q') process.exit(0)
   })
 
@@ -449,9 +445,23 @@ function App() {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box marginBottom={1}>
+      <Box marginBottom={1} justifyContent="space-between">
         <Text bold color="yellow">{t.title}  </Text>
-        <Text dimColor>SALT: friend-2026-401</Text>
+        <Box>
+          <Text
+            bold={lang === 'en'}
+            inverse={lang === 'en'}
+            color="cyan"
+            onClick={() => setLang('en')}
+          > EN </Text>
+          <Text> </Text>
+          <Text
+            bold={lang === 'zh'}
+            inverse={lang === 'zh'}
+            color="cyan"
+            onClick={() => setLang('zh')}
+          > 中文 </Text>
+        </Box>
       </Box>
 
       <Box flexDirection="row">
@@ -500,8 +510,7 @@ function App() {
           {'  '}[<Text color="cyan">r</Text>] {t.reroll}
           {'  '}[<Text color="cyan">n</Text>] {t.next}({speciesIndex === -1 ? 'rand' : ALL_SPECIES[speciesIndex]})
           {'  '}[<Text color="cyan">s</Text>] {t.statsToggle}
-          {'  '}[<Text color="cyan">l</Text>] {t.langSwitch}
-          {'  '}[<Text color="cyan">q</Text>] {t.quit}
+            {'  '}[<Text color="cyan">q</Text>] {t.quit}
         </Text>
       </Box>
     </Box>
